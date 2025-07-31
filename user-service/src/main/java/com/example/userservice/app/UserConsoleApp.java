@@ -9,6 +9,7 @@ import com.example.userservice.service.UserService;
 import com.example.userservice.service.Validator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -28,9 +29,10 @@ import java.util.function.Consumer;
  * Удаления пользователя
  *
  * @author vmarakushin
- * @version 4.0
+ * @version 5.0
  */
 @Component
+@ConditionalOnProperty(prefix = "app", name = "cli-enabled", havingValue = "true")
 public class UserConsoleApp implements CommandLineRunner {
 
     private final Validator validator;

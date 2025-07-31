@@ -1,0 +1,107 @@
+version: '3.8'
+
+
+
+services:
+
+  config-server:
+    build:
+      context: ./config-server
+    container_name: config-server
+    networks:
+      - app-network
+
+
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: userdatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - app-network
+
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - app-network
+
+  discovery-server:
+    build:
+      context: ./discovery-server
+    container_name: discovery-server
+    depends_on:
+      - config-server
+    networks:
+      - app-network
+    env_file:
+      - common.env
+
+
+  user-service:
+    build:
+      context: ./user-service
+    container_name: user-service
+    depends_on:
+      - discovery-server
+      - kafka
+      - postgres
+    networks:
+      - app-network
+    env_file:
+      - common.env
+
+  notification-service:
+    build:
+      context: ./notification-service
+    depends_on:
+      - kafka
+      - discovery-server
+    networks:
+      - app-network
+    env_file:
+      - common.env
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    depends_on:
+      - user-service
+      - notification-service
+    networks:
+      - app-network
+    ports:
+      - "8080:8080"
+    env_file:
+      - common.env
+
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

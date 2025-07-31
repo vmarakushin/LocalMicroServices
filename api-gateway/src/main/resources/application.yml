@@ -1,7 +1,26 @@
 spring:
   application:
     name: api-gateway
-
-
   config:
-    import: configserver:http://localhost:8888
+    import:
+    - "optional:configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: true
+      retry:
+        max-attempts: 100
+        initial-interval: 2000
+        multiplier: 1.5
+        max-interval: 20000
+
+eureka:
+  instance:
+    hostname: api-gateway
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://discovery-server:8761/eureka
